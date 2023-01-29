@@ -1,0 +1,85 @@
+Q1) Given a table containing the candidate_id and skill as the data, return those candidate_id values who were skilled at Python, Tableau and PostgreSQL
+
+A1) Initial idea: 
+
+''' CODE '''
+SELECT DISTINCT(candidate_id)
+from candidates
+where skill in ('Python','Tableau','PostgreSQL')
+group by candidate_id
+order by candidate_id;
+
+This doesn't work as 'IN' returns rows by applying the 'OR' operation
+
+Therefore, Other ideas:
+a) Check for the candidate id in the where clause and apply 3 checks
+b) Count the number of skills and check whether its 3
+
+--------------
+Approach (a)
+--------------
+
+''' CODE '''
+SELECT DISTINCT(candidate_id)
+FROM candidates
+where candidate_id in (select candidate_id from candidates where skill = 'Python') AND
+      candidate_id in (select candidate_id from candidates where skill = 'Tableau') AND
+      candidate_id in (select candidate_id from candidates where skill = 'PostgreSQL') 
+group by candidate_id
+order by candidate_id;
+
+--------------
+Approach (b) 
+--------------
+
+''' CODE '''
+SELECT DISTINCT(candidate_id)
+FROM candidates
+Where skill in ('Python','Tableau','PostgreSQL')
+group by candidate_id
+having count(skill)=3
+order by candidate_id
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q2) Given two tables, page -> page_id and page_name; page_likes -> user_id, page_id, like_date; Find the pages that were not liked
+
+A2) Idea:
+Take the page_id from page table and compare with page_likes. Retain only the page_ids not in page_likes table
+
+''' CODE '''
+SELECT Page_id
+from PAGE
+WHERE Page_id not in (Select distinct(Page_id) from page_likes)
+
+-----------
+Approach 2
+-----------
+* Use LEFT OUTER JOIN 
+* For two tables 'A' and 'B'
+(a) INNER JOIN - (A ∩ B) - Returns the common data between A and B
+
+(b) LEFT JOIN or LEFT OUTER JOIN - Two scenarios:
+                 (1) (A ∩ B) - Returns the common data between A and B; (AND)
+                 (2) A - (A ∩ B) - Returns the data in A not in B
+                 
+(c) RIGHT JOIN or RIGHT OUTER JOIN - Two scenarios:
+                 (1) (A ∩ B) - Returns the common data between A and B; (AND)
+                 (2) B - (A ∩ B) - Returns the data in B not in A
+                 
+  
+ ''' CODE '''
+ SELECT Page.Page_id FROM Page
+ LEFT JOIN Page_Likes
+ on Page.Page_id and Page_Likes.Page_id
+ WHERE Page_Likes.Page_id is null
+ 
+-----------
+Approach 3
+-----------
+* Use EXCEPT keyword               
+
+''' CODE '''
+ SELECT Page_id FROM Page
+ EXCEPT
+ SELECT distinct(Page_id) FROM Page_likes
+ 
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
