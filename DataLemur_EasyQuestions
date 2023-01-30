@@ -107,4 +107,39 @@ A3) Idea:
     Select Count(Distinct(Company_Id) as duplicate_jobs
     From Duplicate_jobs_count
     Where Company_id_Count > 1;
-    ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q4) Average Review Ratings 
+
+The input table contains product_id, product_ratings, month of purchase information. For each month, find the avg of each product rating
+
+A4) Idea: Extract the month from date, use avg function to find the average of each product
+
+''' CODE '''
+Select Extract(MONTH FROM submit_date) as mnth, product_id as product, Round(avg(stars),2) as avg_stars
+FROM reviews
+Group by Extract(MONTH FROM submit_date), product_id
+order by mnth, product
+
+Learning:
+* Why mnth and product cannot be used in Group by?
+- SQL executes the Group by operation before executing the SELECT Statement
+
+---------------------
+Order of execution:
+---------------------
+1. FROM
+2. GROUP BY
+3. SELECT
+4. ORDER BY
+
+--------------
+In General:
+--------------
+1. FROM/JOIN
+2. WHERE
+3. GROUP BY
+4. SELECT
+5. HAVING
+6. ORDER BY
+7. LIMIT
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
