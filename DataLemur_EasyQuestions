@@ -83,3 +83,28 @@ Approach 3
  SELECT distinct(Page_id) FROM Page_likes
  
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q3) Duplicate Job Listings
+
+A table contains the company ID, Job ID, Role, and Role Description for Job Listings. The goal is to identify the total duplicate job listings. 
+A duplicate listing for a company is done using the role and its description. Different companies can post for the same role and description, which won't count.
+
+A3) Idea:
+    Step 1 - Get a count of the company_id to know how many companies have listed multiple jobs
+    Step 2 - Filter by the count of ids where count > 1
+    Step 3 - Count the company ids to find the duplicate jobs
+    
+    Learning:
+    * CTE -> Common temporary Expression - This is a named result set which can be used to obtain the final result
+                                         - Implemented using WITH AS ()
+                                         
+    ''' CODE '''
+    WITH Duplicate_jobs_count AS (
+          SELECT COMPANY_ID, TITLE, DESCRIPTION, COUNT(COMPANY_ID) AS Company_id_Count
+          FROM Job_Listings
+          Group By Company_Id, Title, Description
+    )
+    
+    Select Count(Distinct(Company_Id) as duplicate_jobs
+    From Duplicate_jobs_count
+    Where Company_id_Count > 1;
+    ----------------------------------------------------------------------------------------------------------------------------------------------------------------
