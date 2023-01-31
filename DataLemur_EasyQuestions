@@ -143,3 +143,42 @@ In General:
 6. ORDER BY
 7. LIMIT
 ---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q5) App Click-through Rate (CTR) 
+
+Calculate the click rate % for Facebook in 2022. Here CTR % =  100.0 * Number of clicks / Number of impressions
+The Number of clicks and Number of impressions are given in the table
+
+A5) Idea: Calculate the total clicks and impressions and apply the formula
+
+''' CODE '''
+With click_info AS(
+    SELECT app_id, event_type, count(event_type) as no_clicks 
+    FROM events
+    WHERE Extract(year FROM timestamp) = '2022' AND event_type = 'click'
+    GROUP BY app_id, event_type),
+
+impression_info AS(
+    SELECT app_id, event_type, count(event_type) as no_impressions 
+    FROM events
+    WHERE Extract(year FROM timestamp) = '2022' AND event_type = 'impression'
+    GROUP BY app_id, event_type
+)
+
+Select distinct(click_info.app_id), ROUND((100.0*click_info.no_clicks/impression_info.no_impressions),2) As ctr
+FROM click_info 
+JOIN impression_info
+ON click_info.app_id = impression_info.app_id
+JOIN events
+ON impression_info.app_id = events.app_id
+order by ctr desc
+
+* However. this is inefficient. To become more efficient, implementing a solution using CASE
+''' CODE '''
+Select app_id,
+ROUND(100.0*SUM(CASE WHEN event_Type = 'click' THEN 1 ELSE 0 END AS CLICKS)/SUM(CASE WHEN event_type = 'impression' THEN 1 ELSE 0 END AS Impressions),2) AS CTR
+FROM Events
+WHERE EXTRACT(YEAR From timestamp) = '2022'
+GROUP BY app_id
+Order by CTR DESC
+
+
