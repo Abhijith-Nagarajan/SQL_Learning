@@ -207,4 +207,29 @@ JOIN texts
 ON emails.email_id = texts.email_id 
 WHERE texts.signup_action = 'Confirmed' AND 
 DATE_PART('day',texts.action_date - emails.signup_date) = 1
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q7) Write a query to find out which manufacturer is associated with the drugs that were not profitable and how much money CVS lost on these drugs. 
 
+Output the manufacturer, number of drugs and total losses. Total losses should be in absolute value. Display the results with the highest losses on top.
+
+A7) Idea: Find the total_sales - cogs and check whether <=0. If yes, get the sum of potential losses for other drugs
+
+''' CODE '''
+SELECT manufacturer, 
+SUM(CASE WHEN total_sales-cogs < 0 Then 1 Else 0 END) as drug_count,
+SUM(CASE WHEN total_sales - cogs < 0 Then ABS(total_sales - cogs) Else 0 END) as total_loss
+FROM pharmacy_sales
+WHERE total_sales - cogs < 0
+Group by manufacturer
+Order by total_loss desc
+
+Learning:
+* The Sum and Case defeat the purpose of using the WHERE Clause. Efficient means to code:
+
+SELECT manufacturer, 
+Count(drug) as drug_count,
+SUM(ABS(total_sales - cogs)) as total_loss
+FROM pharmacy_sales
+WHERE total_sales - cogs < 0
+Group by manufacturer
+Order by total_loss desc
