@@ -180,5 +180,31 @@ FROM Events
 WHERE EXTRACT(YEAR From timestamp) = '2022'
 GROUP BY app_id
 Order by CTR DESC
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q6) Second Day Confirmation
 
+New TikTok users sign up with their emails and each user receives a text confirmation to activate their account. Assume you are given the below tables about emails and texts.
+Write a query to display the ids of the users who did not confirm on the first day of sign-up, but confirmed on the second day.
+
+A6) Idea: For each user - compare signup_date and action_date when signup_action is completed
+
+''' CODE '''
+Select emails.user_id 
+FROM emails
+JOIN texts
+ON emails.email_id = texts.email_id 
+WHERE texts.signup_action = 'Confirmed' AND 
+EXTRACT(DAY FROM texts.action_date) - EXTRACT(DAY FROM emails.signup_date) = 1 AND
+EXTRACT(MONTH FROM texts.action_date) = EXTRACT(MONTH FROM emails.signup_date) AND
+EXTRACT(YEAR FROM texts.action_date) = EXTRACT(YEAR FROM emails.signup_date)
+
+* Learnings - Use predefined functions to find the date difference. Here it is date_part
+Syntax - ('KIND',end - start) where 'KIND' - 'year' or 'month' or 'day'
+
+Select emails.user_id 
+FROM emails
+JOIN texts
+ON emails.email_id = texts.email_id 
+WHERE texts.signup_action = 'Confirmed' AND 
+DATE_PART('day',texts.action_date - emails.signup_date) = 1
 
