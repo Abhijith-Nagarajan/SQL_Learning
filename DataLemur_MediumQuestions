@@ -1,0 +1,21 @@
+Q1) Assume you are given the table below on Uber transactions made by users.
+Write a query to obtain the third transaction of every user. Output the user id, spend and transaction date.
+
+A1) Idea: The concept used to tackle these questions is Window Functions. There are 4 kinds of window functions:
+(a) ROW_NUMBER() - Assigns a unique row number for each record
+(b) RANK() - Assigns a rank depending on the partition and order
+(c) DENSE_RANK() - Minor difference between RANK() and DENSE_RANK() --> If two values have the same rank, the rank assigned to the following item varies - Refer Source
+(d) NTILE(N) 
+
+Source: https://www.sqlshack.com/overview-of-sql-rank-functions/
+
+'''CODE'''
+
+WITH ranked_transactions AS(
+SELECT *, RANK() OVER (PARTITION BY user_id Order by Transaction_date) as ranked_data
+)
+
+Select User_id, spend, transaction_date
+From ranked_transactions
+Where ranked_data = 3
+
