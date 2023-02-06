@@ -41,3 +41,32 @@ JOIN activities AC
 ON AB.user_id = AC.user_id
 Group BY AB.age_bucket
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q3) Assume you are given the table containing information on Amazon customers and their spending on products in various categories.
+Identify the top two highest-grossing products within each category in 2022. Output the category, product, and total spend.
+
+Link: https://datalemur.com/questions/sql-highest-grossing
+
+A3) Idea: Need to group by Product and Sum(Spend) then RANK over Category and order by total_spend
+- Clear in idea but implemented about 70% of the solution
+- Logic was to use 2 CTE
+
+''' CODE ''
+WITH Product_total_spend AS(
+  SELECT CATEGORY, PRODUCT, SUM(Spend) as total_spend
+  FROM product_spend
+  WHERE Transaction_date between '01/01/2022' and '12/31/2022'
+  GROUP BY CATEGORY, PRODUCT
+  ORDER BY total_spend DESC), 
+  
+RANKED_TOP_SPEND AS(
+  SELECT *, RANK() OVER(PARTITION BY CATEGORY ORDER BY TOTAL_SPEND DESC) as ranking
+  FROM Product_total_spend
+)
+
+SELECT CATEGORY, PRODUCT, total_spend
+FROM RANKED_TOP_SPEND
+WHERE ranking<=2
+ORDER BY Category, ranking
+
+* When it feels like you need to RANK OVER A GROUP BY OPERATION, USE 2 CTEs
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
