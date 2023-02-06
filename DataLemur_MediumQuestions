@@ -41,7 +41,8 @@ JOIN activities AC
 ON AB.user_id = AC.user_id
 Group BY AB.age_bucket
 ----------------------------------------------------------------------------------------------------------------------------------------------------------------------
-Q3) Assume you are given the table containing information on Amazon customers and their spending on products in various categories.
+Q3) Highest-Grossing Items
+Assume you are given the table containing information on Amazon customers and their spending on products in various categories.
 Identify the top two highest-grossing products within each category in 2022. Output the category, product, and total spend.
 
 Link: https://datalemur.com/questions/sql-highest-grossing
