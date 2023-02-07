@@ -71,3 +71,40 @@ ORDER BY Category, ranking
 
 * When it feels like you need to RANK OVER A GROUP BY OPERATION, USE 2 CTEs
 -------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q4) Top 5 Artists
+
+Assume there are three Spotify tables containing information about the artists, songs, and music charts. 
+Write a query to determine the top 5 artists whose songs appear in the Top 10 of the global_song_rank table the highest number of times. From now on, we'll refer to this ranking number as "song appearances".
+
+Output the top 5 artist names in ascending order along with their song appearances ranking (not the number of song appearances,
+but the rank of who has the most appearances). The order of the rank should take precedence.
+
+A4) ''' CODE '''
+WITH artist_rank_info AS(
+    Select songs.artist_id, gsr.song_id, Count(gsr.song_id) as song_appearance
+    FROM global_song_rank gsr
+    JOIN songs
+    ON gsr.song_id = songs.song_id
+    WHERE gsr.rank between 1 and 10
+    GROUP BY songs.artist_id,gsr.song_id
+    Order by song_appearance DESC
+),
+artist_appearances AS(
+SELECT artist_id, SUM(song_appearance) as TOTAL_RANKS
+FROM artist_rank_info
+GROUP BY artist_id
+ORDER BY TOTAL_RANKS DESC
+),
+final_output AS(
+SELECT artists.artist_name, DENSE_RANK() OVER(ORDER BY AA.total_ranks DESC) as ARTIST_RANK
+FROM artist_appearances AA
+JOIN artists
+ON AA.artist_id = artists.artist_id
+ORDER BY ARTIST_RANK, artists.artist_name
+)
+
+SELECT artist_name, ARTIST_RANK
+FROM final_output
+WHERE ARTIST_RANK<=5
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------
