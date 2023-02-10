@@ -113,7 +113,7 @@ A Microsoft Azure Supercloud customer is a company which buys at least 1 product
 Write a query to report the company ID which is a Supercloud customer.
 Link: https://datalemur.com/questions/supercloud-customer
 
-A5) Idea: Find the sum of product category and check that the su
+A5) Idea: Find the sum of product category and check that the sum >=1 for each
 
 '''CODE'''
 With customer_count AS
@@ -132,4 +132,18 @@ SELECT customer_id
 FROM customer_count
 WHERE Analytics_count >=1 and Containers_count>=1 and Compute_count>=1
 
+* Above approach is wrong as number of product_categories are not known
 
+''' Updated Code'''
+Select CC.customer_id
+FROM customer_contracts CC
+JOIN products P
+ON 
+CC.product_id = P.product_id
+WHERE P.Product_Category IN (
+    select Distinct(Product_Category) as distinct_prod_categories
+    FROM products
+)
+Group by CC.customer_id
+HAVING Count(DISTINCT(P.Product_category))  >= 3
+ORDER BY Count(DISTINCT(P.Product_category)) DESC, CC.customer_id DESC
