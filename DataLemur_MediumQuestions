@@ -182,6 +182,26 @@ SUM(CASE WHEN row_no%2=0 THEN measurement_value ELSE 0 END) as even_sum
 FROM measurements_with_rows
 GROUP BY CAST(measurement_time AS DATE)
 ORDER BY CAST(measurement_time AS DATE)
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q7) Histogram of Users and Purchases
+Assume you are given the table on Walmart user transactions. 
+Based on a user's most recent transaction date, write a query to obtain the users and the number of products bought.
+Output the user's most recent transaction date, user ID and the number of products sorted by the transaction date in chronological order.
 
+Link: https://datalemur.com/questions/histogram-users-purchases
 
+A7) Idea: Perform dense_rank and partition by user_id and order by transaction_date DESC to get most recent transaction
+
+''' CODE '''
+WITH ranked_transactions AS
+(
+  SELECT *, DENSE_RANK() OVER(PARTITION BY user_id ORDER BY transaction_date DESC) AS ranked_data
+  FROM user_transactions
+)
+
+Select transaction_date, user_id, Count(user_id) as purchase_count
+FROM ranked_transactions
+Where ranked_data = 1
+Group By transaction_date,user_id
+Order by transaction_date
 
