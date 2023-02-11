@@ -147,3 +147,18 @@ WHERE P.Product_Category IN (
 Group by CC.customer_id
 HAVING Count(DISTINCT(P.Product_category))  >= 3
 ORDER BY Count(DISTINCT(P.Product_category)) DESC, CC.customer_id DESC
+
+* Update to the code:
+''' update 2 '''
+Select CC.customer_id
+FROM customer_contracts CC
+JOIN products P
+ON 
+CC.product_id = P.product_id
+Group by CC.customer_id
+HAVING Count(DISTINCT(P.Product_category))  >= (SELECT COUNT(Distinct(Product_Category)) FROM products)
+ORDER BY Count(DISTINCT(P.Product_category)) DESC, CC.customer_id DESC
+
+-> No need to use WHERE clause with Product_Category as HAVING is used to check on count
+
+
