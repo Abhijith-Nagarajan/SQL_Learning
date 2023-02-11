@@ -160,5 +160,28 @@ HAVING Count(DISTINCT(P.Product_category))  >= (SELECT COUNT(Distinct(Product_Ca
 ORDER BY Count(DISTINCT(P.Product_category)) DESC, CC.customer_id DESC
 
 -> No need to use WHERE clause with Product_Category as HAVING is used to check on count
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q6) Odd and Even Measurements
+
+Assume you are given the table containing measurement values obtained from a Google sensor over several days. 
+Measurements are taken several times within a given day.
+Write a query to obtain the sum of the odd-numbered and even-numbered measurements on a particular day, in two different columns.
+
+link: https://datalemur.com/questions/odd-even-measurements
+
+Idea: Get row_number by partitioning with date and take reminder to sum the values for even and odd
+
+'''CODE'''
+WITH measurements_with_rows AS(
+    SELECT *, ROW_NUMBER() OVER(PARTITION BY CAST(measurement_time AS DATE) ORDER BY measurement_time) as row_no
+    FROM measurements
+)
+SELECT CAST(measurement_time AS DATE),
+SUM(CASE WHEN row_no%2=1 THEN measurement_value ELSE 0 END) as odd_sum,
+SUM(CASE WHEN row_no%2=0 THEN measurement_value ELSE 0 END) as even_sum
+FROM measurements_with_rows
+GROUP BY CAST(measurement_time AS DATE)
+ORDER BY CAST(measurement_time AS DATE)
+
 
 
