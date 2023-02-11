@@ -204,4 +204,48 @@ FROM ranked_transactions
 Where ranked_data = 1
 Group By transaction_date,user_id
 Order by transaction_date
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q8) Compressed Mode
+You are trying to find the most common (aka the mode) number of items bought per order on Alibaba.
+However, instead of doing analytics on all Alibaba orders, you have access to a summary table, which describes how many items were in an order (item_count), 
+and the number of orders that had that many items (order_occurrences).
+In case of multiple item counts, display the item_counts in ascending order.
+
+Link: https://datalemur.com/questions/alibaba-compressed-mode
+
+* Approach - Use rank and order by occurrences in DESC and display item count where rank = 1
+
+SELECT item_count as MODE
+FROM (
+    SELECT item_count, RANK() OVER(Order by order_occurrences DESC) as ranked_order
+    FROM items_per_order
+) AS ranked_order_occurrences
+WHERE ranked_order = 1
+ORDER BY item_count
+
+- Alternate approach:
+* Find the max(order_occurences) and display the corresponding item_count
+
+''' CODE '''
+Select item_count
+FROM items_per_order
+WHERE order_occurences = (
+                            Select MAX(order_occurences)
+                            FROM items_per_order
+                          )
+Order by item_count
+
+- 2nd Alternate approach:
+* Use: MODE() WITHIN GROUP()
+
+''' CODE '''
+SELECT item_count
+FROM items_per_order
+WHERE order_occurrences = 
+  (SELECT MODE() WITHIN GROUP (ORDER BY order_occurrences DESC) 
+  FROM items_per_order)
+ORDER BY item_count;
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 
