@@ -1,0 +1,12 @@
+Q1) https://www.codewars.com/kata/5809575e166583acfa000083/train/sql
+
+With ranked_clan as
+(
+    Select CASE WHEN clan = '' Then '[no clan specified]' Else clan END AS clan,
+    sum(points) as total_points, count(name) as total_people
+    From People
+    Group by clan
+)
+
+Select RANK() OVER(Order by total_points desc), clan, total_points, total_people
+FROM ranked_clan
