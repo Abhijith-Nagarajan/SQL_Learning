@@ -1,0 +1,26 @@
+Q1) https://leetcode.com/problems/customer-who-visited-but-did-not-make-any-transactions/
+
+A) Concept tested - Subquery/CTE/JOIN
+Aim: Find the ids present in Table Visits, not present in Table transactions and get the count of customers. 
+
+JOIN - Left join - Inner Join = A(U)B - A (AND) B = A [Venn diagram]
+https://www.codeproject.com/Articles/33052/Visual-Representation-of-SQL-Joins
+
+Achieved using:
+Select 'AS REQUIRED'
+FROM T1
+LEFT JOIN T2
+ON T1.key = T2.key
+WHERE T2.key is null
+
+SOLUTION:
+
+Select customer_id, count(customer_id) as count_no_trans
+FROM Visits v
+WHERE v.visit_id in 
+(Select v.visit_id 
+    FROM Visits v
+    LEFT JOIN Transactions t
+    ON t.visit_id = v.visit_id
+    WHERE t.visit_id is null)
+group by customer_id
