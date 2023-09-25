@@ -1,0 +1,17 @@
+1070. Product Sales Analysis III
+https://leetcode.com/problems/product-sales-analysis-iii/
+
+Sales - sale_id, product_id, year, quantity, price
+Product - product_id, product_name
+
+Write a solution to select the product id, year, quantity, and price for the first year of every product sold.
+Return the resulting table in any order.
+
+WITH CTE AS
+(
+    Select product_id, year as first_year, quantity, price, DENSE_RANK() OVER (PARTITION BY product_id ORDER BY year) AS Sorted_Product
+    FROM Sales 
+)
+Select product_id, first_year, quantity, price
+FROM CTE 
+WHERE Sorted_Product = 1

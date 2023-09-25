@@ -1,0 +1,16 @@
+619. Biggest Single Number
+
+MyNumbers - num
+
+A single number is a number that appeared only once in the MyNumbers table.
+Find the largest single number. If there is no single number, report null.
+
+select MAX(num) as num
+FROM MyNumbers
+Where num in 
+(
+    select num
+    FROM MyNumbers
+    Group by num
+    HAVING Count(num)=1
+)

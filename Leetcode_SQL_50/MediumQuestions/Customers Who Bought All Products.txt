@@ -1,0 +1,10 @@
+1045. Customers Who Bought All Products
+https://leetcode.com/problems/customers-who-bought-all-products/
+
+Customer - customer_id, product_key
+Product - product_key
+
+Select customer_id
+FROM Customer
+Group by customer_id
+Having count(distinct(product_key)) = (Select count(product_key) FROM Product)
