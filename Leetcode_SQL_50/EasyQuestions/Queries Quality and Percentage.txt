@@ -1,0 +1,13 @@
+1211. Queries Quality and Percentage
+
+https://leetcode.com/problems/queries-quality-and-percentage/
+
+Queries - query_name,result,position,rating
+
+To get a count of ratings - Initially thought of using CTEs but that doesn't work as the aggregate operation will not work
+
+Select query_name, ROUND(SUM(1.0*rating/position)/Count(query_name) ,2) as quality,
+ROUND(100.0*CAST(SUM(CASE WHEN rating<3 THEN 1 ELSE 0 END) AS FLOAT)/Count(query_name),2) as poor_query_percentage
+FROM Queries
+GROUP BY query_name
+	

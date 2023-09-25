@@ -1,0 +1,14 @@
+Q1) https://leetcode.com/problems/average-time-of-process-per-machine
+
+A) Concept tested - JOIN
+Aim: Find the average run time of each machine where the start and end timestamp is given separately
+
+SOLUTION:
+Select machine_id, 
+ROUND
+(
+	(SELECT avg(timestamp) from Activities a1 Where a1.machine_id = a.machine_id and a1.activity='end') -
+	(SELECT avg(timestamp) from Activities a1 Where a1.machine_id = a.machine_id and a1.activity='start'), 3
+) as processed_time
+FROM Activities a
+Group by machine_id

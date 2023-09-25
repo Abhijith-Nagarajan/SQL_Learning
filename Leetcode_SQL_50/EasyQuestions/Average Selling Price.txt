@@ -1,0 +1,18 @@
+1251. Average Selling Price
+
+https://leetcode.com/problems/average-selling-price/
+
+Write a solution to find the average selling price for each product. average_price should be rounded to 2 decimal places.
+
+Prices - product_id, start_date, end_date, price
+UnitsSold - product_id, purchase_date, units
+
+Goal - For each product, find the price corresponding to the purchase date and compute the overall average sales.
+If a product is not purchased, then the output should return 0
+
+Select P.product_id, ROUND(SUM(1.0*P.price*isnull(U.units,0))/SUM(isnull(U.units,1)), 2) as average_price
+FROM Prices P
+LEFT JOIN UnitsSold U
+ON P.product_id =  U.product_id
+WHERE U.purchase_date between P.start_date and P.end_date OR U.purchase_date is null
+Group by P.product_id
