@@ -245,7 +245,91 @@ WHERE order_occurrences =
   (SELECT MODE() WITHIN GROUP (ORDER BY order_occurrences DESC) 
   FROM items_per_order)
 ORDER BY item_count;
-----------------------------------------------------------------------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------------------------------------------
+Q9) Rolling Average - Twitter
+
+Given a table of tweet data over a specified time period, calculate the 3-day rolling average of tweets for each user. Output the user ID, tweet date, and rolling averages rounded to 2 decimal places.
+
+Link: https://datalemur.com/questions/rolling-average-tweets
+
+Select user_id, tweet_date, 
+ROUND( 
+  AVG(tweet_count) 
+OVER (PARTITION BY user_id Order by tweet_date ROWS 2 PRECEDING),2) AS rolling_avg_3d
+FROM tweets
+
+------------------------------------------------------------------------------------------------------------------------------------------
+Q10) JP Morgan - New Credit card analysis
+
+https://datalemur.com/questions/card-launch-success
+
+Your team at JPMorgan Chase is soon launching a new credit card. You are asked to estimate how many cards you'll issue in the first month.
+Before you can answer this question, you want to first get some perspective on how well new credit card launches typically do in their first month.
+Write a query that outputs the name of the credit card, and how many cards were issued in its launch month. The launch month is the earliest record in the monthly_cards_issued table for a given card. Order the results starting from the biggest issued amount.
+
+- Code
+With cte AS
+(
+  Select card_name, issued_amount,
+  row_number() over 
+  (partition by card_name order by issue_year, issue_month) as credit_card_row_no
+  FROM monthly_cards_issued
+)
+Select card_name, issued_amount
+FROM cte 
+Where credit_card_row_no = 1
+Order by issued_amount desc
+
+- Alternate method - Approach: Uses first_value() - Window function where the first_value is returned after applying the partition and order by clauses.
+
+SELECT DISTINCT card_name, 
+first_value(issued_amount) OVER(PARTITION BY card_name ORDER BY make_date(issue_year,issue_month,'01')) as amount
+FROM monthly_cards_issued
+ORDER BY amount DESC;
 
 
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+Q11) Verizon - International Call % 
+
+
+A phone call is considered an international call when the person calling is in a different country than the person receiving the call.
+
+What percentage of phone calls are international? Round the result to 1 decimal.
+
+Assumption:
+
+The caller_id in phone_info table refers to both the caller and receiver.
+
+https://datalemur.com/questions/international-call-percentage
+
+
+CODE - 
+With Caller_CTE AS
+(
+  Select pc.caller_id, pc.receiver_id, pi.country_id as caller_country
+  FROM phone_calls pc, phone_info pi 
+  Where pc.caller_id = pi.caller_id
+),
+Receiver_CTE AS
+(
+  Select pc.caller_id, pc.receiver_id, pi.country_id as receiver_country
+  FROM phone_calls pc, phone_info pi 
+  Where pc.receiver_id = pi.caller_id
+)
+Select Round
+(100.0*Sum(Case when c.caller_country != r.receiver_country THEN 1 ELSE 0 
+            End)/(select count(*) FROM phone_calls),1) as international_calls_pct
+FROM Caller_CTE c
+JOIN Receiver_CTE r
+ON c.caller_id = r.caller_id and c.receiver_id = r.receiver_id 
+-----------------
+Better Solution
+-----------------
+Select 
+ROUND(100.0*SUM(Case when caller.country != receiver.country THEN 1 ELSE 0 END)/Count(*),1) as international_call_perc
+FROM phone_calls pc
+JOIN phone_info caller ON pc.caller_id = caller.caller_id
+JOIN phone_info receiver ON pc.receiver_id = pi.caller_id
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
