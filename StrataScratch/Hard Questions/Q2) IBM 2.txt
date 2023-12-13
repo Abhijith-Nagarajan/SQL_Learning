@@ -1,0 +1,9 @@
+Q2) https://platform.stratascratch.com/coding/10358-friday-purchases?code_type=5
+
+IBM is working on a new feature to analyze user purchasing behavior for all Fridays in the first quarter of the year. For each Friday, calculate the average amount users have spent. The output should contain the week number of that Friday and average amount spent.
+
+select avg(amount_spent) as average_spend, 
+datepart(iso_week,date) as week_number
+from user_purchases
+where day_name = 'Friday' and MONTH(date) between 1 and 4
+group by day_name, date;

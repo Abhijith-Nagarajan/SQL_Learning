@@ -1,0 +1,48 @@
+https://leetcode.com/problems/monthly-transactions-i/?envType=study-plan-v2&envId=top-sql-50
+
+
+WITH CTE AS
+(
+    Select CAST(Year(trans_date) as Varchar(4))+'-'+IIF(Month(trans_date)<10,'0'+Cast(Month(trans_date) as Varchar(2)),Cast(Month(trans_date) as Varchar(2))) as month, country, count(*) as trans_count, sum(amount) as trans_total_amount
+From Transactions 
+Group by CAST(Year(trans_date) as Varchar(4))+'-'+IIF(Month(trans_date)<10,'0'+Cast(Month(trans_date) as Varchar(2)),Cast(Month(trans_date) as Varchar(2))), country
+),
+Approval AS
+(Select CAST(Year(trans_date) as Varchar(4))+'-'+IIF(Month(trans_date)<10,'0'+Cast(Month(trans_date) as Varchar(2)),Cast(Month(trans_date) as Varchar(2))) as month, country, 
+sum
+(   case
+        when state='approved' Then 1 Else 0
+    End
+) as approved_count,
+sum
+(   case 
+        when state='approved' Then amount else 0
+    End
+) as approved_total_amount
+From Transactions 
+Group by CAST(Year(trans_date) as Varchar(4))+'-'+IIF(Month(trans_date)<10,'0'+Cast(Month(trans_date) as Varchar(2)),Cast(Month(trans_date) as Varchar(2))), country)
+
+Select cte.month, cte.country, cte.trans_count, a.approved_count, cte.trans_total_amount, a.approved_total_amount
+From CTE cte, Approval a
+Where cte.month = a.month and cte.country = a.country
+
+_______________________________________________________________________________________________________________________________________
+Select CAST(Year(trans_date) as Varchar(4))+'-'+IIF(Month(trans_date)<10,'0'+Cast(Month(trans_date) as Varchar(2)),Cast(Month(trans_date) as Varchar(2))) as month, country, count(*) as trans_count, 
+sum
+(   case
+        when state='approved' Then 1 Else 0
+    End
+) as approved_count,
+sum(amount) as trans_total_amount,
+sum
+(   case 
+        when state='approved' Then amount else 0
+    End
+) as approved_total_amount
+From Transactions 
+Group by CAST(Year(trans_date) as Varchar(4))+'-'+IIF(Month(trans_date)<10,'0'+Cast(Month(trans_date) as Varchar(2)),Cast(Month(trans_date) as Varchar(2))), country)
+
+
+
+
+

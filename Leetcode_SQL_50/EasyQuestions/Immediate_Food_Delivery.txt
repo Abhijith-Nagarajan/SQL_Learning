@@ -1,0 +1,14 @@
+https://leetcode.com/problems/immediate-food-delivery-ii
+
+With CTE AS(
+Select customer_id,order_date,customer_pref_delivery_date as cpdate, 
+    ROW_NUMBER() OVER(Partition by customer_id Order by order_date) as row_no
+    FROM Delivery
+)
+
+Select 
+    ROUND(100.0 *
+          SUM(CASE WHEN order_date=cpdate THEN 1 ELSE 0 END)
+          /(count(*)),2) as immediate_percentage
+FROM CTE
+Where row_no=1

@@ -1,0 +1,37 @@
+Q) IBM wants to reward employees who meet certain criteria. However, to ensure fairness, the following conditions must be met:
+
+
+•	The employee must have been with the company for at least 3 years
+•	The employee's department must have at least 5 employees
+•	The salary must be within the top 10% of salaries within the department
+
+
+The output should include the Employee ID, Salary, and Department of the employees meeting the criteria.
+
+https://platform.stratascratch.com/coding/10359-eligible-employees?code_type=5
+
+Learning:
+----------
+Using PERCENT_RANK() window function
+
+
+With dept_salary_cte AS(
+    SELECT employee_id, department,
+    PERCENT_RANK() OVER (PARTITION BY department ORDER BY salary) AS PercentileSalary
+    FROM employee_salaries
+)
+
+--select * from dept_salary_cte Where PercentileSalary >= 0.9
+
+Select es.employee_id, es.salary, es.department 
+FROM employee_salaries es
+INNER JOIN dept_salary_cte cte
+ON es.employee_id = cte.employee_id AND es.department = cte.department
+WHERE 
+es.employee_id IN 
+(Select employee_id FROM employee_salaries where tenure >=3) AND
+es.department IN 
+(Select department FROM employee_salaries Group By department having count(employee_id)>=5) AND 
+cte.PercentileSalary >= 0.9
+
+
