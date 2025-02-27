@@ -151,4 +151,27 @@ where type = 1 AND processed = 'TRUE';
 
 Takeaways: (*) Processed is a bool column: Instead of checking for 'TRUE' or 'FALSE', can check for 1 or 0
 --------------------------------------------------------------------------------------------------------------------------------------------
-Q16) 
+Q16) Mobile and Web Logins
+
+Count the number of unique users per day who logged in from both a mobile device and web. Output the date and the corresponding number of users.
+
+(A) select cast(ml.date as date) as date, count(distinct(ml.user_id)) as total_users 
+from mobile_logs ml
+inner join web_logs wl
+ON ml.user_id = wl.user_id AND cast(ml.date as date) = cast(wl.date as date)
+group by cast(ml.date as date)
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q17) Popularity of Hack
+
+Meta/Facebook has developed a new programing language called Hack.To measure the popularity of Hack they ran a survey with their employees. The survey included data on previous programing familiarity as well as the number of years of experience, age, gender and most importantly satisfaction with Hack. Due to an error location data was not collected, but your supervisor demands a report showing average popularity of Hack by office location. Luckily the user IDs of employees completing the surveys were stored.
+Based on the above, find the average popularity of the Hack per office location.
+Output the location along with the average popularity.
+
+(A) select emp.location, AVG(cast(hs.popularity as float)) as avg_popularity
+from facebook_employees emp
+join facebook_hack_survey hs
+ON emp.id = hs.employee_id
+Group by emp.location
+
+Takeaways: (*) Got issues with float numbers. Multiplying with 1.0 did not help. Before taking average, cast column as float. Works as expected
+--------------------------------------------------------------------------------------------------------------------------------------------
