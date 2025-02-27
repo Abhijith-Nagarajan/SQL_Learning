@@ -1,0 +1,13 @@
+Q) Number of Comments Per User in 30 days before 2020-02-10
+
+A) Select user_id, sum(number_of_comments) as total_comments
+FROM fb_comments_count
+Where number_of_comments > 0 AND 
+CAST(created_at as date) between DATEADD(day, -30, '2020-02-10') AND '2020-02-10' 
+Group by user_id
+Order by total_comments DESC
+
+Learning:
+1) Whenever a date interval is asked, use the DATEADD() so that it can dynamically get the required dates instead of hard coding.
+2) EXTRACT() does not work all the time.
+So use CAST() instead 
