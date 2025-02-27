@@ -1,0 +1,154 @@
+Q1) Number of Comments Per User in 30 days before 2020-02-10
+
+A) Select user_id, sum(number_of_comments) as total_comments
+FROM fb_comments_count
+Where number_of_comments > 0 AND 
+CAST(created_at as date) between DATEADD(day, -30, '2020-02-10') AND '2020-02-10' 
+Group by user_id
+Order by total_comments DESC
+
+Learning:
+1) Whenever a date interval is asked, use the DATEADD() so that it can dynamically get the required dates instead of hard coding.
+2) EXTRACT() does not work all the time.
+So use CAST() instead 
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q2) Find all actions which occurred more than once in the weblog
+
+A) select action
+FROM facebook_web_log
+Group by action
+having count(action) > 1
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q3) Find all messages which have references to either user 2 or 3
+
+A) Select sender, message_id, text
+From facebook_messages_sent
+Where lower(text) LIKE '%user 2%' OR lower(text) LIKE '%user 3%' 
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q4) Find all posts which were reacted to with a heart
+
+A) Select distinct(r.post_id), r.poster, p.post_text, p.post_keywords, p.post_date
+FROM facebook_reactions r
+join facebook_posts p
+ON r.post_id = p.post_id
+Where lower(r.reaction) = 'heart' 
+
+Takeaways: (*) Did not consider distinct posts initially. A post can be liked by many users so should not return duplicate results.
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q5) Find all users who liked a post
+
+A) select friend 
+from facebook_reactions
+where lower(reaction) = 'like'
+group by (friend)
+having count(distinct(poster)) >=1
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q6) User Scroll Up Events
+
+SELECT distinct(user_id)
+FROM facebook_web_log
+Where lower(action) = 'scroll_up'
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q7) Most Lucrative Products 
+
+You have been asked to find the 5 most lucrative products in terms of total revenue for the first half of 2022 (from January to June inclusive).
+
+Select TOP 5 product_id, SUM(cost_in_dollars * units_sold) as total_earnings
+From online_orders
+Where CAST(date_sold as date) between '2022-01-01' and '2022-06-30'
+Group by product_id
+Order by total_earnings DESC
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q8) Users Activity Per Month Day
+
+Return a distribution of users activity per day of the month. By distribution we mean the number of posts per day of the month.
+
+With CTE AS(
+    select cast(post_date as date) as post_date,  count(post_id) as total_posts
+    from facebook_posts
+    group by cast(post_date as date)
+)
+Select DAY(post_date) as day, total_posts
+FROM CTE
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q9) Questions in Second Quarter
+
+How many searches were there in the second quarter of 2021?
+
+(A) select count(search_query) as total_searches
+from fb_searches
+Where DATEPART(year,date) = '2021' AND (DATEPART(MONTH,date) IN (4,5,6));
+
+(B) select count(search_query) as total_searches
+from fb_searches
+Where DATEPART(year,date) = '2021' AND DATEPART(quarter,date) = 2;
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q10) Users with Many Searches
+
+Count the number of users who made more than 5 searches in August 2021.
+
+A) WITH CTE AS(
+    select user_id, count(search_id) as total_searches
+    from fb_searches
+    where datepart(month,date) = 8 AND datepart(year,date) = 2021
+    Group by user_id
+)
+Select count(user_id) as total_users
+FROM CTE
+Where total_searches > 5;
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q11) Low Fat and Recyclable
+
+What percentage of all products are both low fat and recyclable?
+
+Select  
+ROUND((100.0*SUM(CASE WHEN is_low_fat = 'Y' AND is_recyclable = 'Y' THEN 1 ELSE 0 END))/(COUNT(product_id)),2)
+FROM facebook_products
+
+Takeaways: (*) Forgot to combine sum-case in the same clause. 
+           (*) Instead of counting directly in denominator, wrote the entire select query as subquery. Inefficient
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q12) Sales with Valid Promotion
+
+The marketing manager wants you to evaluate how well the previously ran advertising campaigns are working.
+Particularly, they are interested in the promotion IDs from the online_promotions table.
+Find the percentage of orders with promotion IDs from the online_promotions table applied.
+
+(A)
+select (100.0*count(promotion_id))/(select count(*) FROM online_orders) as percentage 
+from online_orders
+Where promotion_id IN (Select distinct(promotion_id) FROM online_promotions);
+
+Takeaways: (*) Solved this without using joins
+           (*) Found solutions with left and right joins -> need to solve more with joins
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q13) Unique Employee Logins
+
+You have been tasked with finding the worker IDs of individuals who logged in between the 13th to the 19th inclusive of December 2021.
+In your output, provide the unique worker IDs for the dates requested.
+
+(A) select distinct(worker_id) as total_workers
+from worker_logins
+where cast(login_timestamp as date) between '2021-12-13' AND '2021-12-19' 
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q14) User Activity Count
+
+Count the unique activity types for each user, ensuring users with no activities are also included.
+The output should show each user's ID and their activity type count, with zero for users who have no activities.
+
+(A) select up.user_id, count(distinct(al.activity_type)) as total_unique_activities
+from user_profiles up
+LEFT JOIN activity_log al
+ON up.user_id = al.user_id
+Group by up.user_id
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q15) Find the complaint id for the processed complaints of type 1
+
+(A) select complaint_id
+from facebook_complaints
+where type = 1 AND processed = 'TRUE';
+
+Takeaways: (*) Processed is a bool column: Instead of checking for 'TRUE' or 'FALSE', can check for 1 or 0
+--------------------------------------------------------------------------------------------------------------------------------------------
+Q16) 
