@@ -1,0 +1,66 @@
+Q1) Share of Active Users
+Output share of US users that are active. Active users are the ones with an "open" status in the table fb_active_users.
+
+A) select (1.0*SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END))/(count(*)) AS 'usa_active_users'
+from fb_active_users
+where lower(country) = 'usa'
+----------------------------------------------------------------------------------------------------------------------------
+Q2) Top Three Classes
+
+The marketing department wants to launch a new promotion for the most successful product classes.
+Find the top 3 product classes according to their number of sales. In the event of a tie, output all results.
+
+WITH CTE AS
+(
+    select  op.product_class as product_class, SUM(oo.cost_in_dollars * oo.units_sold) as number_of_sales
+    from online_products op
+    inner join online_orders oo
+    ON op.product_id = oo.product_id
+    Group by op.product_class
+)
+Select top 3 product_class
+FROM CTE
+ORDER BY number_of_sales DESC
+
+(WRONG SOLUTION - Because I wrote top 3 and the question says if there's a tie, then output all results.)
+WITH CTE AS
+(
+    select  op.product_class as product_class, DENSE_RANK() OVER(ORDER BY SUM(oo.cost_in_dollars * oo.units_sold) DESC) as sales_order
+    from online_products op
+    inner join online_orders oo
+    ON op.product_id = oo.product_id
+    Group by op.product_class
+)
+Select product_class
+FROM CTE
+Where sales_order <=3
+-------------------------------------------------------------------------------------------------------------------------------------------------
+Q3) Same Brand Purchases
+
+The marketing department is aiming its next promotion at customers who have purchased products from two particular brands: Fort West and Golden.
+You have been asked to prepare a list of customers who purchased products from both brands.
+
+
+With CTE AS
+(
+    Select oo.customer_id as customer_id, 
+    SUM(Case when lower(op.brand_name) = 'fort west' THEN 1 ELSE 0 END) AS 'FW_Count',
+    SUM(Case when lower(op.brand_name) = 'golden' THEN 1 ELSE 0 END) AS 'Golden_Count'
+    FROM online_products op
+    JOIN online_orders oo
+    ON op.product_id = oo.product_id
+    GROUP BY oo.customer_id
+)
+select customer_id
+FROM CTE
+Where FW_Count > 0 AND Golden_Count > 0;
+-------------------------------------------------------------------------------------------------------------------------------------------------
+Q4) Blocked Users
+You are given a table of users who have been blocked from Facebook, together with the date, duration, and the reason for the blocking. The duration is expressed as the number of days after blocking date and if this field is empty, this means that a user is blocked permanently.
+For each blocking reason, count how many users were blocked in December 2021. Include both the users who were blocked in December 2021 and those who were blocked before but remained blocked for at least a part of December 2021.
+
+(A) select block_reason, count(user_id) as blocked_users
+from fb_blocked_users
+Where cast(block_date as date) >= '2021-12-01' OR 
+      (ABS(DATEDIFF(day,'2021-12-01',block_date)) < block_duration)
+Group by block_reason
