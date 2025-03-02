@@ -64,3 +64,74 @@ from fb_blocked_users
 Where cast(block_date as date) >= '2021-12-01' OR 
       (ABS(DATEDIFF(day,'2021-12-01',block_date)) < block_duration)
 Group by block_reason
+
+[Takeaways -> Did not factor the null case] 
+-------------------------------------------------------------------------------------------------------------------------------------------------
+Q5) Number of Conversations
+
+Count the total number of distinct conversations on WhatsApp. Two users share a conversation if there is at least 1 message between them. Multiple messages between the same pair of users are considered a single conversation.
+
+Idea 1 - Create some sort of mechanism to duplicate table to eliminate commutative pairs and only retain (A -> B and not A -> B and B-> A)
+Use UNION for this because it eliminates duplicates and appends to a row
+
+WITH CTE AS(
+	Select sender as user1, receiver as user2 
+	FROM table
+	UNION
+	Select receiver as user1, sender as user2
+	From table)
+Select Count(*) 
+FROM CTE
+Where user1 < user2
+
+Takeaways: The last condition helps eliminate duplicate conversations and just count exclusive pairs
+
+Idea 2 - Concat sender - receiver to create a distinct order and count the orders to get total conversations
+Using Concat with case and get distinct options
+
+WITH CTE AS
+(
+	Select Distinct (CASE WHEN sender > receiver THEN CONCAT(sender,'-',receiver) ELSE CONCAT(receiver,'-',sender) END) AS pairs
+	FROM Table
+)
+Select count(*) FROM CTE 
+-------------------------------------------------------------------------------------------------------------------------------------------------
+Q6) First and Last Day Promotion Results
+
+The marketing team is evaluating the performance of their previously ran promotions.
+They are particularly interested in comparing the number of transactions on the first and last day of each promotion.
+Segment the results by promotion and calculate the percentage of total transactions that occurred on these days.
+Your output should include the promotion ID, the percentage of transactions on the first day, and the percentage of transactions on the last day.
+
+With cte as
+(
+    Select oo.promotion_id, 
+                SUM( CASE WHEN oo.date_sold = osp.start_date THEN 1 ELSE 0 END) As 'first_day_sales',
+                SUM( CASE WHEN oo.date_sold = osp.end_date THEN 1 ELSE 0 END) As 'last_day_sales',
+                count(oo.date_sold) as total_sales
+    From online_orders oo
+    join online_sales_promotions osp
+    ON oo.promotion_id = osp.promotion_id
+    Group by oo.promotion_id
+)
+Select promotion_id, 100.0*(cast(first_day_sales as float)/total_sales) as start_date_percentage,
+    100.0*(cast(last_day_sales as float)/total_sales) as end_date_percentage
+FROM cte
+-------------------------------------------------------------------------------------------------------------------------------------------------
+Q7) Highest Sales with Promotions
+
+The marketing department is assessing the success of their promotional campaigns.
+You have been asked to find which products sold the most units for each promotion.
+Your output should contain the promotion ID, product ID, and corresponding total sales for the most successful product ID. In the case of a tie, output all results.
+
+With CTE AS
+(
+Select promotion_id, product_id, SUM(units_sold) as total_sales, 
+    DENSE_RANK() OVER (PARTITION BY promotion_id ORDER BY SUM(units_sold) DESC) as sales_rank
+FROM online_orders
+Group by promotion_id, product_id
+)
+Select promotion_id, product_id, total_sales
+FROM CTE
+Where sales_rank = 1
+
