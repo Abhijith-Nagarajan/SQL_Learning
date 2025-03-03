@@ -134,4 +134,92 @@ Group by promotion_id, product_id
 Select promotion_id, product_id, total_sales
 FROM CTE
 Where sales_rank = 1
+-------------------------------------------------------------------------------------------------------------------------------------------------
+Q8) Products Never Sold
 
+The VP of Sales feels that some product categories don't sell and can be completely removed from the inventory.
+As a first pass analysis, they want you to find what percentage of product categories have never been sold.
+
+WITH CTE AS
+(
+    Select count(distinct(op.product_category)) as categories_sold 
+    FROM online_products op
+    JOIN online_orders oo
+    ON op.product_id = oo.product_id
+)
+Select (1 - (cast (categories_sold as float))/(Select count(*) from online_product_categories))*100.0 as 'percentage_of_unsold_categories'
+FROM CTE
+
+Takeaways: Many solutions used Right Join. Need to understand this.
+-------------------------------------------------------------------------------------------------------------------------------------------------
+Q9) Top Two Media Types
+
+You have been tasked with finding the top two single-channel media types (ranked in decreasing order) that correspond to the most money the grocery chain had spent on its promotional campaigns.
+Your output should contain the media type and the total amount spent on the advertising campaign. In the event of a tie, output all results and do not skip ranks.
+
+WITH CTE AS
+(
+    Select media_type, SUM(cost) as total_spent, DENSE_RANK() OVER(ORDER BY SUM(Cost) DESC) as rnk
+    FROM online_sales_promotions
+    Group by media_type
+)
+Select media_type, total_spent
+FROM CTE
+WHERE rnk <=2
+-------------------------------------------------------------------------------------------------------------------------------------------------
+Q10) Customer Consumable Sales Percentages
+
+Following a recent advertising campaign, you have been asked to compare the sales of consumable products across all brands.
+Do the comparison of the brands by finding the percentage of unique customers (among all customers in the dataset) who purchased consumable products of some brand and then do the calculation for each brand.
+Your output should contain the brand_name and percentage_of_customers rounded to the nearest whole number and ordered in descending order.
+
+select op.brand_name, ROUND(100.0*CAST(count(distinct oo.customer_id) as float)/(Select Count(DISTINCT customer_id) FROM online_orders),1) AS pc_cust
+from online_orders oo
+join online_products op
+ON oo.product_id = op.product_id
+WHERE UPPER(op.product_family) = 'CONSUMABLE'
+group by op.brand_name
+order by pc_cust DESC
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q11) Sales Evaluation on Media Formats
+
+The marketing department is evaluating the most effective promotional strategies for each product family.
+You have been asked to find the total sales by media type for each category as a percentage of the overall sales for that family. For example the product family ELECTRONICS could be sold 57% through INTERNET and 43% through BROADCAST.
+Your output should include the product family listed alphabetically, the media type, and the calculated percentage of sales rounded to the nearest whole number ordered from highest to lowest.
+
+
+With CTE_1 AS(
+    Select op.product_family, osp.media_type, 
+        SUM(oo.cost_in_dollars*units_sold) AS total_sales
+    FROM online_sales_promotions osp
+    join online_orders oo
+    ON osp.promotion_id = oo.promotion_id
+    join online_products op
+    ON oo.product_id = op.product_id
+    Group by op.product_family, osp.media_type
+),
+CTE_2 AS(
+    Select op.product_family,  
+    SUM(oo.cost_in_dollars*units_sold) AS product_fam_sales
+    From online_orders oo
+    join online_products op
+    ON oo.product_id = op.product_id    
+    Group by op.product_family
+)
+Select t1.product_family, t1.media_type, 100.0*(cast(t1.total_sales as float)/(t2.product_fam_sales)) as percent_sales
+From CTE_1 t1
+JOIN CTE_2 t2
+ON t1.product_family = t2.product_family
+Order by t1.product_family 
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q12) Successfully Sent Messages
+
+Find the ratio of successfully received messages to sent messages.
+
+select (count(recv.message_id))/(Select cast(count(message_id) as float) FROM facebook_messages_received)  as ratio
+from facebook_messages_sent sent
+left join facebook_messages_received recv
+on sent.message_id = recv.message_id;
+
+Takeaways: (*) Found this to be easy but made mistake on right joins {Don't take it lightly}
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
