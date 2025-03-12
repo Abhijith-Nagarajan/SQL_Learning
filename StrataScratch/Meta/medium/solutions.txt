@@ -223,3 +223,89 @@ on sent.message_id = recv.message_id;
 
 Takeaways: (*) Found this to be easy but made mistake on right joins {Don't take it lightly}
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q13) Successful Lower Priced Product
+
+The sales department wants to identify lower-priced products that still sell well.
+
+
+Find product IDs that meet both of the following criteria:
+
+
+⦁    The product has been sold at least twice (i.e., appeared in at least two different purchases).
+⦁    The average sale price (cost_in_dollars) for that product is at least $3.
+
+
+Return a list containing product IDs along with their corresponding brand name.
+
+
+WITH CTE AS
+(
+Select oo.product_id, op.brand_name, count(oo.product_id) as total_transactions,
+    AVG(cost_in_dollars) as avg_sale_price
+FROM online_orders oo
+JOIN online_products op
+ON op.product_id = oo.product_id
+Group by oo.product_id, op.brand_name
+)
+Select product_id, brand_name
+FROM CTE
+Where total_transactions >=2 AND avg_sale_price >=3
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q14) Acceptance Rate By Date
+
+Calculate the friend acceptance rate for each date when friend requests were sent. A request is sent if action = sent and accepted if action = accepted. If a request is not accepted, there is no record of it being accepted in the table. The output will only include dates where requests were sent and at least one of them was accepted, as the acceptance rate can only be calculated for those dates. Show the results ordered from the earliest to the latest date.
+
+With Sent_CTE 
+AS(
+    Select date, count(*) as total_sent
+    FROM fb_friend_requests
+    Where action = 'sent'
+    Group by date
+),
+Accepted_CTE 
+AS( 
+    Select date, count(*) as total_accepted
+    FROM fb_friend_requests
+    EXISTS 
+   (
+    Select 1
+    FROM fb_friend_requests fr2
+    WHERE fr2.action = 'accepted' AND 
+    fr1.user_id_sender = fr2.user_id_sender AND 
+    fr1.user_id_receiver = fr2.user_id_receiver
+   )
+    AND action = 'sent'
+    Group by date
+)
+Select Accepted_CTE.date, (total_accepted/total_sent)
+FROM Accepted_CTE acte, Sent_CTE scte
+ON acte.date = scte.date
+Where scte.total_accepted > 0
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q15) Clicked Vs Non-Clicked Search Results
+
+The question asks you to calculate two percentages based on search results. First, find the percentage of all search records clicked (clicked = 1) and in the top 3 positions. Second, find the percentage of all search records that were not clicked (clicked = 0) but in the top 3 positions. Both percentages are calculated with respect to the total number of search records and should be output in the same row as two columns.
+
+With CTE1 AS
+(   
+    Select Count(*) as total_searches 
+    FROM fb_search_events
+),
+CTE2 AS
+(
+    Select CAST(count(search_term) as float) as top_3_count
+    FROM fb_search_events
+    Where clicked = 1 AND search_results_position <=3
+),
+CTE3 AS
+(
+    Select CAST(count(search_term) as float) as top_3_non_count
+    FROM fb_search_events
+    Where clicked = 0 AND search_results_position <=3
+)
+
+Select 100.0*(top_3_count/total_searches) as clicked_percentage,
+100.0*(top_3_non_count/total_searches) as non_clicked_percentage
+FROM CTE1, CTE2, CTE3
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
