@@ -309,3 +309,225 @@ Select 100.0*(top_3_count/total_searches) as clicked_percentage,
 100.0*(top_3_non_count/total_searches) as non_clicked_percentage
 FROM CTE1, CTE2, CTE3
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q16) Find whether the number of seniors works at Meta/Facebook is higher than its number of USA based employees
+
+Find whether the number of senior workers (i.e., more experienced) at Meta/Facebook is higher than number of USA based employees at Facebook/Meta.
+If the number of seniors is higher then output as 'More seniors'. Otherwise, output as 'More USA-based'.
+
+With CTE AS
+(
+    select 
+        sum(case when is_senior = 1 THEN 1 ELSE 0 END) AS total_senior_employees,
+        sum(case when location = 'USA' THEN 1 ELSE 0 END) AS usa_employees
+    from facebook_employees
+)
+Select (CASE WHEN total_senior_employees >= usa_employees THEN 'More Seniors' ELSE 'More USA-based'  END) AS Winner
+FROM CTE
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q17) Friday's Likes Count
+
+You have access to Facebook’s database, which contains tables related to user interactions. Your task is to calculate the total number of likes from friends for each date that falls on a Friday.
+A like should only be counted if the user who liked the post is a friend of the user who made the post.
+The output should contain two different columns: 'date' and 'likes'.
+
+With friends_CTE AS
+(
+    Select f1.user_name1 as u1,f1.user_name2 as u2 
+    FROM friendships f1 
+    UNION
+    Select f2.user_name2 as u1,f2.user_name1 as u2 
+    FROM friendships f2
+)
+Select l.date_liked, count(*) as total_friday_likes
+FROM friends_CTE f
+JOIN user_posts up
+ON up.user_name = f.u1 
+JOIN likes l
+ON l.post_id = up.post_id
+Where datepart(weekday,l.date_liked) = 6 AND l.user_name = f.u2
+Group by l.date_liked
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q18) Highest Energy Consumption
+
+Find the date with the highest total energy consumption from the Meta/Facebook data centers. Output the date along with the total energy consumption across all data centers.
+
+With cte1 AS
+(
+    Select date, consumption 
+    FROM fb_na_energy
+    Union All
+    
+    Select date, consumption 
+    FROM fb_eu_energy
+    Union All
+    
+    Select date, consumption 
+    FROM fb_asia_energy
+),
+cte2 AS
+(
+    Select date, sum(consumption) as total_consumption, rank() over (order by sum(consumption) DESC) as rnk
+    FROM cte1
+    Group by date
+)
+Select date, total_consumption
+From cte2
+Where rnk = 1
+
+
+Takeaways: (*) Impossible to solve without Union All. Union All helps to append rows with duplicates. So we get the entire data. (V useful to solve the issue)
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q19) Liked' Posts
+
+Find the number of posts which were reacted to with a like.
+
+With CTE AS
+(
+    Select post_id, sum(CASE When reaction = 'like' THEN 1 ELSE 0 END) as total_likes
+    FROM facebook_reactions
+    Group by post_id
+)
+Select count(post_id) as number_of_posts
+FROM CTE
+Where total_likes >=1
+
+Takeaways: (*) Noob way to solve this. Make it simpler with count(distinct())
+
+Select count(distinct(post_id))
+FROM facebook_reactions
+Where reaction = 'like'
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q20) Meta/Facebook Accounts
+
+Calculate the ratio of accounts closed on January 10th, 2020 using the fb_account_status table.
+
+Select CAST(Count(*) as float)/(select count(*) from fb_account_status where cast(date as date) = '2020-01-10')
+FROM fb_account_status
+Where status = 'closed' and cast(date as date) = '2020-01-10'
+
+Takeaways: (*) Noob way to solve this. When dealing with a filtered numerator and a common denominator, if possible, put the filter in a sum(case) or count(case) to minimize rewriting the entire query.
+
+Select (CAST(SUM(CASE when status = 'closed' THEN 1 ELSE 0 END) AS float)/(Count(*))
+FROM table
+Where Date(date) = '2020-01-10'
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q21) Meta/Facebook Matching Users Pairs
+
+Find matching pairs of Meta/Facebook employees such that they are both of the same nation, different age, same gender, and at different seniority levels.
+Output ids of paired employees.
+
+select f1.id as employee_1, f2.id as employee_2
+from facebook_employees f1,facebook_employees f2
+WHERE f1.location = f2.location AND 
+      f1.age<>f2.age AND 
+               f1.gender = f2.gender AND 
+               f1.is_senior!=f2.is_senior
+
+Takeaways: (*) Made the mistake of joining by id and then adding the where condition. Just join with the conditions. Cannot make this error.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q22) Most Active Users On Messenger
+
+Meta/Facebook Messenger stores the number of messages between users in a table named 'fb_messages'. In this table 'user1' is the sender, 'user2' is the receiver, and 'msg_count' is the number of messages exchanged between them.
+Find the top 10 most active users on Meta/Facebook Messenger by counting their total number of messages sent and received. Your solution should output usernames and the count of the total messages they sent or received
+
+With user_cte AS
+(
+    Select user1 as user, msg_count
+    FROM fb_messages 
+    UNION ALL 
+    select user2 as user, msg_count
+    FROM fb_messages
+),
+msg_cte AS
+(
+    Select user, sum(msg_count) as user_activity, dense_rank() over(order by sum(msg_count) DESC) as rnk
+    FROM user_cte
+    Group by user
+)
+Select user, user_activity
+FROM msg_cte
+Where rnk <=10
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q23) Spam Posts
+
+Calculate the percentage of spam posts in all viewed posts by day. A post is considered a spam if a string "spam" is inside keywords of the post. Note that the facebook_posts table stores all posts posted by users. The facebook_post_views table is an action table denoting if a user has viewed a post.
+
+Select post_date, 100.0*CAST(SUM(CASE WHEN p.post_keywords LIKE '%spam%' THEN 1 ELSE 0 END)AS float)/(COUNT(*))
+FROM facebook_posts p
+JOIN facebook_post_views pv
+ON p.post_id = pv.post_id
+Group by post_date
+
+Takeaways: (*) Need clarity regarding question
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q24) Top Posts Per Channel
+
+Identify the top 3 posts with the highest like counts for each channel. Assign a rank to each post based on its like count, allowing for gaps in ranking when posts have the same number of likes. For example, if two posts tie for 1st place, the next post should be ranked 3rd, not 2nd. Exclude any posts with zero likes.
+The output should display the channel name, post ID, post creation date, and the like count for each post.
+
+WITH CTE AS
+(
+    Select channel_id, post_id, created_at, likes, RANK() OVER(PARTITION BY channel_id ORDER BY likes DESC) as post_rnk
+    FROM posts
+    Where likes > 0
+)
+Select channels.channel_name, post_id, created_at, likes
+FROM CTE, channels
+Where CTE.channel_id = channels.channel_id
+AND post_rnk <=3
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Q25) User Feature Completion
+
+An app has product features that help guide users through a marketing funnel. Each feature has "steps" (i.e., actions users can take) as a guide to complete the funnel. What is the average percentage of completion for each feature?
+
+With CTE_1 AS
+(
+    Select pf.feature_id, fr.user_id, IF(fr.step_reached is null,0,MAX(fr.step_reached)) as completed_steps, pf.n_steps 
+    FROM facebook_product_features_realizations fr
+    RIGHT JOIN facebook_product_features pf
+    ON fr.feature_id = pf.feature_id
+    Group by pf.feature_id, fr.user_id, pf.n_steps
+)
+Select feature_id, 100.0*(CAST(AVG(completed_steps/n_steps) AS float)) as avg_completion_percentage
+FROM CTE_1
+Group by feature_id
+
+Takeaways: (*) Did not initially take RIGHT JOIN because forgot to consider features for which not even 1 step was completed NEED TO BE MORE CAREFUL.
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+With load_cte as
+(
+    Select user_id, timestamp as load_date,
+    DENSE_RANK() OVER(Partition by user_id ORDER BY timestamp DESC) as load_rnk
+    FROM facebook_web_log
+    Where action = 'page_load'
+    Group by user_id, cast(timestamp as date)
+),
+exit_cte as
+(
+    Select user_id, timestamp as exit_date,
+    DENSE_RANK() OVER(Partition by user_id ORDER BY timestamp ASC) as exit_rnk
+    FROM facebook_web_log
+    Where action = 'page_exit'
+    Group by user_id, cast(timestamp as date)
+)
+
+Select lcte.user_id, AVG(ecte.exit_date - lcte.load_date) as avg_time_spent
+FROM load_cte lcte
+JOIN exit_cte ecte
+ON lcte.user_id = ecte.user_id
+Where cast(lcte.load_date as date) = cast(ecte.exit_date as date) AND load_rnk > exit_rnk
+Group by lcte.user_id
+
+
+Select user_id, timestamp as load_date,
+DENSE_RANK() OVER(Partition by user_id, cast(timestamp as date) ORDER BY timestamp DESC) as load_rnk
+FROM facebook_web_log
+Where action = 'page_load'
+Group by user_id, timestamp 
+
+Select user_id, timestamp as exit_date,
+DENSE_RANK() OVER(Partition by user_id, cast(timestamp as date) ORDER BY timestamp ASC) as exit_rnk
+FROM facebook_web_log
+Where action = 'page_exit'
+Group by user_id, timestamp
