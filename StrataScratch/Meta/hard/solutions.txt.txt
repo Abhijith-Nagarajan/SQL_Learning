@@ -1,0 +1,70 @@
+1) Algorithm Performance
+
+Meta/Facebook is developing a search algorithm that will allow users to search through their post history. You have been assigned to evaluate the performance of this algorithm.
+We have a table with the user's search term, search result positions, and whether or not the user clicked on the search result.
+
+Write a query that assigns ratings to the searches in the following way:
+•	If the search was not clicked for any term, assign the search with rating=1
+•	If the search was clicked but the top position of clicked terms was outside the top 3 positions, assign the search a rating=2
+•	If the search was clicked and the top position of a clicked term was in the top 3 positions, assign the search a rating=3
+
+As a search ID can contain more than one search term, select the highest rating for that search ID. Output the search ID and its highest rating.
+Example: The search_id 1 was clicked (clicked = 1) and its position is outside of the top 3 positions (search_results_position = 5), therefore its rating is 2.
+
+With CTE AS
+(
+    Select search_id, 
+        (CASE WHEN clicked = 0 THEN 1
+              WHEN search_results_position IN (1,2,3) THEN 3 ELSE 2 
+         END) AS 'rating'
+    FROM fb_search_events se
+)
+Select search_id, MAX(rating) as highest_rating
+FROM CTE
+Group by search_id
+
+Takeaways: (*) Problem got very easy to handle after recognizing that multiple case statements had to be used. 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+2) Average Time Between Steps
+
+Facebook wants to understand the average time users take to perform certain activities in a feature. User activity is captured in the column step_reached.
+
+Calculate the average time it takes for users to progress through the steps of each feature. Your approach should first calculate the average time it takes for each user to progress through their steps within the feature. Then, calculate the feature's average progression time by taking the average of these user-level averages. Ignore features where no user has more than one step.
+
+Output the feature ID and the average progression time in seconds.
+
+With CTE AS
+(
+    Select feature_id, user_id, Count(step_reached) as total_steps_reached
+    FROM facebook_product_features_realizations
+    Group by feature_id, user_id
+),
+CTE2 AS
+(
+    Select distinct(feature_id) 
+    FROM CTE
+    Where total_steps_reached >1
+),
+CTE3 AS
+(
+    Select fr.feature_id, fr.user_id, fr.step_reached, fr.timestamp, 
+        LEAD(fr.timestamp) OVER (PARTITION BY fr.feature_id, fr.user_id ORDER by timestamp) as lead_time,
+        TIMESTAMPDIFF(SECOND,fr.timestamp,LEAD(fr.timestamp) OVER (PARTITION BY fr.feature_id, fr.user_id ORDER by timestamp)) As time_difference
+    FROM facebook_product_features_realizations fr, CTE2
+    Where fr.feature_id = CTE2.feature_id 
+),
+CTE4 AS
+(
+    Select feature_id, user_id, AVG(time_difference) as avg_time_per_user
+    FROM CTE3
+    Where lead_time is not null
+    Group by feature_id, user_id
+)
+Select feature_id, AVG(avg_time_per_user) as avg_progression_time
+FROM CTE4
+Group by feature_id
+
+Takeaways: (*) Problem got very easy to handle after recognizing that lead or lag statements had to be used.
+(*) When calculating time difference, don't subtract but use TIMESTAMPDIFF(SECOND, prev_timestamp,current_timestamp) for accuracy. Results got skewed because of this.
+ 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
